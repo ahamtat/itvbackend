@@ -13,4 +13,3 @@ linters:
     - nakedret
     - wsl
     - bodyclose
-    - godot
