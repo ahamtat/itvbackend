@@ -3,6 +3,7 @@ package server_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -63,10 +64,16 @@ func TestServer_FetchResponse(t *testing.T) {
 	populateStorage(s, t)
 }
 
-func readAndDecodeRequests(s http.Handler, expected int, t *testing.T) []model.Request {
+func readAndDecodeRequests(s http.Handler, expected int, paginator *model.Paginator, t *testing.T) []model.Request {
+	var body io.Reader
+	if paginator != nil && paginator.RequestsPerPage > 0 {
+		buff, err := json.Marshal(paginator)
+		require.Nil(t, err)
+		body = bytes.NewReader(buff)
+	}
 	// Read responses from storage
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(http.MethodGet, "/v1/requests/list", nil)
+	req, err := http.NewRequest(http.MethodGet, "/v1/requests/list", body)
 	require.Nil(t, err)
 	s.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
@@ -87,8 +94,16 @@ func TestServer_ListResponse(t *testing.T) {
 		storage.NewMemoryStorage(),
 		logrus.New())
 
+	// Read All data
 	populateStorage(s, t)
-	_ = readAndDecodeRequests(s, len(fetchData), t)
+	_ = readAndDecodeRequests(s, len(fetchData), nil, t)
+
+	// Read with paginator
+	populateStorage(s, t)
+	_ = readAndDecodeRequests(s, 2, &model.Paginator{
+		Page:            0,
+		RequestsPerPage: 2,
+	}, t)
 }
 
 func TestServer_DeleteResponse(t *testing.T) {
@@ -98,7 +113,7 @@ func TestServer_DeleteResponse(t *testing.T) {
 		logrus.New())
 
 	populateStorage(s, t)
-	requests := readAndDecodeRequests(s, len(fetchData), t)
+	requests := readAndDecodeRequests(s, len(fetchData), nil, t)
 
 	// Delete responses from storage
 	for _, req := range requests {
@@ -119,6 +134,6 @@ func TestServer_DeleteResponse(t *testing.T) {
 	}
 
 	// Check if storage is empty
-	emptyRequest := readAndDecodeRequests(s, 0, t)
+	emptyRequest := readAndDecodeRequests(s, 0, nil, t)
 	require.Empty(t, emptyRequest)
 }

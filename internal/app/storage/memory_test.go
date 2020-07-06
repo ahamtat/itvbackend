@@ -1,8 +1,10 @@
-package storage
+package storage_test
 
 import (
 	"net/http"
 	"testing"
+
+	"github.com/ahamtat/itvbackend/internal/app/storage"
 
 	"github.com/stretchr/testify/assert"
 
@@ -33,11 +35,11 @@ func TestMemoryStorage_AddRequest(t *testing.T) {
 			name:             "Nil data",
 			fetch:            nil,
 			notEmptyExpected: false,
-			errExpected:      ErrInvalidInputData,
+			errExpected:      storage.ErrInvalidInputData,
 		},
 	}
 
-	s := NewMemoryStorage()
+	s := storage.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	for _, tc := range testCases {
@@ -50,7 +52,7 @@ func TestMemoryStorage_AddRequest(t *testing.T) {
 }
 
 func TestMemoryStorage_AddResponse(t *testing.T) {
-	s := NewMemoryStorage()
+	s := storage.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	// Populate storage with data
@@ -90,12 +92,13 @@ func TestMemoryStorage_AddResponse(t *testing.T) {
 }
 
 func TestMemoryStorage_GetAllRequests(t *testing.T) {
-	s := NewMemoryStorage()
+	s := storage.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	// Populate storage with data
+	totalRequests := 10
 	generatedID := make([]string, 0, 10)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < totalRequests; i++ {
 		ID, err := s.AddRequest(&model.FetchData{
 			Method:  "GET",
 			URL:     "http://google.com",
@@ -107,11 +110,11 @@ func TestMemoryStorage_GetAllRequests(t *testing.T) {
 		// Save generated IDs
 		generatedID = append(generatedID, ID)
 	}
-	require.Equal(t, len(generatedID), 10)
+	require.Equal(t, len(generatedID), totalRequests)
 
-	// Get request list
-	requests := s.GetAllRequests()
-	require.Equal(t, len(requests), 10)
+	// Get ALL requests list
+	requests := s.GetAllRequests(nil)
+	require.Equal(t, totalRequests, len(requests))
 	for _, req := range requests {
 		assert.Equal(t, &model.Request{
 			Fetch: &model.FetchData{
@@ -123,10 +126,17 @@ func TestMemoryStorage_GetAllRequests(t *testing.T) {
 			Response: nil,
 		}, &req)
 	}
+
+	// Get requests for one page
+	requests = s.GetAllRequests(&model.Paginator{
+		Page:            2,
+		RequestsPerPage: 3,
+	})
+	require.Equal(t, 3, len(requests))
 }
 
 func TestMemoryStorage_DeleteRequest(t *testing.T) {
-	s := NewMemoryStorage()
+	s := storage.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	// Populate storage with data
@@ -151,5 +161,5 @@ func TestMemoryStorage_DeleteRequest(t *testing.T) {
 	require.Nil(t, s.DeleteRequest(generatedID[9]))
 
 	// Delete request by invalid ID
-	require.Equal(t, ErrRequestNotFound, s.DeleteRequest(uuid.New().String()))
+	require.Equal(t, storage.ErrRequestNotFound, s.DeleteRequest(uuid.New().String()))
 }

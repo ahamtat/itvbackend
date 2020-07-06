@@ -40,7 +40,7 @@ func (s *MemoryStorage) AddRequest(data *model.FetchData) (string, error) {
 }
 
 // AddResponse saves response from external resource by request ID.
-func (s *MemoryStorage) AddResponse(ID string, response *model.Response) error {
+func (s *MemoryStorage) AddResponse(id string, response *model.Response) error {
 	// Check input data
 	if response == nil {
 		return ErrInvalidInputData
@@ -50,7 +50,7 @@ func (s *MemoryStorage) AddResponse(ID string, response *model.Response) error {
 	defer s.mx.Unlock()
 
 	// Save response in memory
-	req, ok := s.storage[ID]
+	req, ok := s.storage[id]
 	if !ok {
 		return ErrRequestNotFound
 	}
@@ -59,32 +59,44 @@ func (s *MemoryStorage) AddResponse(ID string, response *model.Response) error {
 }
 
 // GetAllRequests reads all requests from storage.
-func (s *MemoryStorage) GetAllRequests() []model.Request {
-	result := make([]model.Request, 0, len(s.storage))
+func (s *MemoryStorage) GetAllRequests(paginator *model.Paginator) []model.Request {
+	capacity := len(s.storage)
+	if paginator != nil {
+		capacity = paginator.RequestsPerPage
+	}
+	result := make([]model.Request, 0, capacity)
 
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
 	// Copy requests for reliability
-	for _, v := range s.storage {
+	index := -1
+	for _, value := range s.storage {
+		index++
+
+		// Skip request from undesirable page
+		if paginator != nil && index/paginator.RequestsPerPage != paginator.Page {
+			continue
+		}
+
 		result = append(result, model.Request{
-			Fetch:    v.Fetch,
-			Response: v.Response,
+			Fetch:    value.Fetch,
+			Response: value.Response,
 		})
 	}
 	return result
 }
 
 // DeleteRequest removes request from storage by ID.
-func (s *MemoryStorage) DeleteRequest(ID string) error {
+func (s *MemoryStorage) DeleteRequest(id string) error {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 
 	// Remove response from memory
-	_, ok := s.storage[ID]
+	_, ok := s.storage[id]
 	if !ok {
 		return ErrRequestNotFound
 	}
-	delete(s.storage, ID)
+	delete(s.storage, id)
 	return nil
 }

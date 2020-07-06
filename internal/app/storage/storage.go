@@ -11,7 +11,7 @@ type Storage interface {
 	AddResponse(ID string, response *model.Response) error
 
 	// GetAllRequests reads all requests from storage.
-	GetAllRequests() []model.Request
+	GetAllRequests(paginator *model.Paginator) []model.Request
 
 	// DeleteRequest removes request from storage by ID.
 	DeleteRequest(ID string) error

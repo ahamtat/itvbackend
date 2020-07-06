@@ -13,3 +13,8 @@ linters:
     - nakedret
     - wsl
     - bodyclose
+
+issues:
+  exclude:
+    - Using the variable on range scope `tc` in function literal
+    - Using a reference for the variable on range scope `req`

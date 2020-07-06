@@ -60,6 +60,11 @@ func (s *Server) handleRequest() http.HandlerFunc {
 }
 
 func (s *Server) makeRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Body == nil {
+		s.logger.Errorln("makeRequest(): invalid request body")
+		s.error(w, http.StatusBadRequest, nil)
+		return
+	}
 	data := &model.FetchData{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
 		s.logger.Errorf("makeRequest(): error decoding request body: %s", err)
@@ -95,6 +100,11 @@ func (s *Server) makeRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Body == nil {
+		s.logger.Errorln("deleteRequest(): invalid request body")
+		s.error(w, http.StatusBadRequest, nil)
+		return
+	}
 	type request struct {
 		ID string `json:"id"`
 	}
@@ -118,8 +128,22 @@ func (s *Server) deleteRequest(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleListAllRequests() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		paginator := &model.Paginator{}
+		if r.Body == nil {
+			paginator = nil
+		} else {
+			if err := json.NewDecoder(r.Body).Decode(paginator); err != nil {
+				s.logger.Errorf("handleListAllRequests(): error decoding request body: %s", err)
+				s.error(w, http.StatusBadRequest, err)
+				return
+			}
+			if paginator.RequestsPerPage == 0 {
+				paginator = nil
+			}
+		}
+
 		// Get stored requests
-		requests := s.storage.GetAllRequests()
+		requests := s.storage.GetAllRequests(paginator)
 		s.respond(w, http.StatusOK, requests)
 	}
 }
