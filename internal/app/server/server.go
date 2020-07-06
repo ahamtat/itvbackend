@@ -20,9 +20,8 @@ type Server struct {
 }
 
 // NewServer constructor.
-func NewServer(fetcher fetcher.Fetcher, storage storage.Storage) *Server {
+func NewServer(fetcher fetcher.Fetcher, storage storage.Storage, logger *logrus.Logger) *Server {
 	// Check input data
-	logger := logrus.New()
 	if fetcher == nil || storage == nil {
 		logger.Fatalf("NewServer(): invalid input data")
 	}

@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ahamtat/itvbackend/internal/app/server"
@@ -55,7 +57,8 @@ func populateStorage(s http.Handler, t *testing.T) {
 func TestServer_FetchResponse(t *testing.T) {
 	s := server.NewServer(
 		fetcher.NewMockFetcher(),
-		storage.NewMemoryStorage())
+		storage.NewMemoryStorage(),
+		logrus.New())
 
 	populateStorage(s, t)
 }
@@ -81,7 +84,8 @@ func readAndDecodeRequests(s http.Handler, expected int, t *testing.T) []model.R
 func TestServer_ListResponse(t *testing.T) {
 	s := server.NewServer(
 		fetcher.NewMockFetcher(),
-		storage.NewMemoryStorage())
+		storage.NewMemoryStorage(),
+		logrus.New())
 
 	populateStorage(s, t)
 	_ = readAndDecodeRequests(s, len(fetchData), t)
@@ -90,7 +94,8 @@ func TestServer_ListResponse(t *testing.T) {
 func TestServer_DeleteResponse(t *testing.T) {
 	s := server.NewServer(
 		fetcher.NewMockFetcher(),
-		storage.NewMemoryStorage())
+		storage.NewMemoryStorage(),
+		logrus.New())
 
 	populateStorage(s, t)
 	requests := readAndDecodeRequests(s, len(fetchData), t)
