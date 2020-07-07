@@ -62,11 +62,16 @@ func (f *HTTPFetcher) Fetch(id string, data *model.FetchData) (*model.Response, 
 		_ = resp.Body.Close()
 	}()
 
+	length := resp.ContentLength
+	if length < 0 {
+		length = 0
+	}
+
 	// Get info from valid response
 	return &model.Response{
 		ID:      id,
 		Status:  resp.StatusCode,
 		Headers: resp.Header,
-		Length:  resp.ContentLength,
+		Length:  length,
 	}, nil
 }
