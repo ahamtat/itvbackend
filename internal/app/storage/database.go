@@ -48,7 +48,7 @@ func (s *DatabaseStorage) AddRequest(data *model.FetchData) (string, error) {
 
 	err = conn.QueryRow(
 		s.ctx,
-		"INSERT INTO requests (uuid, method, url, fetch_headers, body) VALUES ($1, $2, $3, $4) RETURNING id",
+		"INSERT INTO requests (uuid, method, url, fetch_headers, body) VALUES ($1, $2, $3, $4, $5) RETURNING id",
 		uuid,
 		data.Method,
 		data.URL,
