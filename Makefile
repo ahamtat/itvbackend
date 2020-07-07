@@ -9,9 +9,9 @@ GOBIN := $(GOBASE)/build/bin
 build:
 	@go build -mod=mod -o $(GOBIN)/itvbackend $(GOBASE)/cmd/itvbackend/*.go
 
-.PHONY: migrate
-migrate:
-	@migrate -path ./migrations -database postgres://postgres:postgres@localhost:5432/itvbackend?sslmode=disable up 1
+.PHONY: migrate-db
+migrate-db:
+	@migrate -path ./migrations -database postgres://postgres:postgres@localhost:5432/itvbackend?sslmode=disable -verbose up
 
 .PHONY: test
 test:
