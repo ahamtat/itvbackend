@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -17,25 +18,58 @@ import (
 )
 
 var (
-	port    string
-	timeout int
+	port     string
+	dsn      string
+	mode     string
+	timeout  int
+	poolSize int
 )
 
-func main() {
+func init() {
 	flag.StringVar(&port, "port", "8080", "server port number")
+	flag.StringVar(&dsn, "dsn", "postgres://postgres:postgres@localhost:5432/itvbackend?sslmode=disable", "database connection string")
+	flag.StringVar(&mode, "mode", "memory", "storage mode [memory, database]")
 	flag.IntVar(&timeout, "timeout", 5, "timeout for external resource")
+	flag.IntVar(&poolSize, "pool", 5, "size of worker pool & database connection pool")
 	flag.Parse()
+}
 
+func main() {
 	logger := logrus.New()
 
-	srv := server.NewServer(
-		fetcher.NewHTTPFetcher(time.Duration(timeout)*time.Second),
-		storage.NewMemoryStorage(),
-		logrus.New())
+	// Create application main context
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Initialize proper server logic
+	var handler http.Handler
+	switch mode {
+	case "memory":
+		handler = server.NewServer(
+			fetcher.NewHTTPFetcher(time.Duration(timeout)*time.Second),
+			storage.NewMemoryStorage(),
+			logrus.New())
+	case "database":
+		conn := storage.NewDatabaseConnection(dsn, poolSize)
+		if err := conn.Init(); err != nil {
+			logger.Fatalln("connection to database is not valid")
+		}
+		handler = server.NewConcurrentServer(
+			poolSize,
+			fetcher.NewHTTPFetcher(time.Duration(timeout)*time.Second),
+			storage.NewDatabaseStorage(ctx, conn),
+			logrus.New())
+	default:
+		logger.Fatalf("wrong storage mode: %s\n", mode)
+	}
+
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", port),
+		Handler: handler,
+	}
 
 	// Start server
 	go func() {
-		if err := http.ListenAndServe(fmt.Sprintf(":%s", port), srv); err != nil {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatalf("error listening HTTP server: %s", err.Error())
 		}
 	}()
@@ -48,6 +82,17 @@ func main() {
 
 	// Wait until user interrupt
 	<-done
+
+	// Cancel main context
+	cancel()
+
+	// Make server graceful shutdown
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Fatalf("Server shutdown failed: %v", err)
+	}
 
 	logger.Info("Application exited properly")
 }

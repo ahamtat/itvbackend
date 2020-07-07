@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"strings"
 
@@ -10,13 +10,17 @@ import (
 	"github.com/ahamtat/itvbackend/internal/app/model"
 )
 
+// DatabaseStorage data.
 type DatabaseStorage struct {
-	db *sql.DB
+	conn *Connection
+	ctx  context.Context
 }
 
-func NewDatabaseStorage(db *sql.DB) Storage {
+// NewDatabaseStorage constructor.
+func NewDatabaseStorage(ctx context.Context, conn *Connection) Storage {
 	return &DatabaseStorage{
-		db: db,
+		conn: conn,
+		ctx:  ctx,
 	}
 }
 
@@ -34,7 +38,16 @@ func (s *DatabaseStorage) AddRequest(data *model.FetchData) (string, error) {
 		id   string
 		uuid = uuid.New().String()
 	)
-	err := s.db.QueryRow(
+
+	// Get connection from pool
+	conn, err := s.conn.Get(s.ctx)
+	if err != nil {
+		return "", err
+	}
+	defer conn.Release()
+
+	err = conn.QueryRow(
+		s.ctx,
 		"INSERT INTO requests (uuid, method, url, fetch_headers, body) VALUES ($1, $2, $3, $4) RETURNING id",
 		uuid,
 		data.Method,
@@ -51,7 +64,15 @@ func (s *DatabaseStorage) AddRequest(data *model.FetchData) (string, error) {
 
 // AddResponse saves response from external resource by request ID.
 func (s *DatabaseStorage) AddResponse(id string, response *model.Response) error {
-	_, err := s.db.Exec(
+	// Get connection from pool
+	conn, err := s.conn.Get(s.ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	_, err = conn.Exec(
+		s.ctx,
 		"UPDATE requests SET status=$1, length=$2, response_headers=$3 WHERE uuid=$4",
 		response.Status,
 		response.Length,
