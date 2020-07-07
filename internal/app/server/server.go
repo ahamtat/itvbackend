@@ -62,13 +62,13 @@ func (s *Server) handleRequest() http.HandlerFunc {
 func (s *Server) makeRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
 		s.logger.Errorln("makeRequest(): invalid request body")
-		s.error(w, http.StatusBadRequest, nil)
+		sendError(w, http.StatusBadRequest, nil)
 		return
 	}
 	data := &model.FetchData{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
 		s.logger.Errorf("makeRequest(): error decoding request body: %s", err)
-		s.error(w, http.StatusBadRequest, err)
+		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -76,7 +76,7 @@ func (s *Server) makeRequest(w http.ResponseWriter, r *http.Request) {
 	ID, err := s.storage.AddRequest(data)
 	if err != nil {
 		s.logger.Errorf("makeRequest(): error saving request to storage: %s", err)
-		s.error(w, http.StatusInternalServerError, err)
+		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -84,25 +84,25 @@ func (s *Server) makeRequest(w http.ResponseWriter, r *http.Request) {
 	resp, err := s.fetcher.Fetch(ID, data)
 	if err != nil {
 		s.logger.Errorf("makeRequest(): error fetching response from external resource: %s", err)
-		s.error(w, http.StatusInternalServerError, err)
+		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	// Save response to storage
 	if err := s.storage.AddResponse(ID, resp); err != nil {
 		s.logger.Errorf("makeRequest(): error saving response to storage: %s", err)
-		s.error(w, http.StatusInternalServerError, err)
+		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	// Return response to client
-	s.respond(w, http.StatusOK, resp)
+	respond(w, http.StatusOK, resp)
 }
 
 func (s *Server) deleteRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
 		s.logger.Errorln("deleteRequest(): invalid request body")
-		s.error(w, http.StatusBadRequest, nil)
+		sendError(w, http.StatusBadRequest, nil)
 		return
 	}
 	type request struct {
@@ -111,19 +111,19 @@ func (s *Server) deleteRequest(w http.ResponseWriter, r *http.Request) {
 	data := &request{}
 	if err := json.NewDecoder(r.Body).Decode(data); err != nil {
 		s.logger.Errorf("deleteRequest(): error decoding request body: %s", err)
-		s.error(w, http.StatusBadRequest, err)
+		sendError(w, http.StatusBadRequest, err)
 		return
 	}
 
 	// Delete request from storage
 	if err := s.storage.DeleteRequest(data.ID); err != nil {
 		s.logger.Errorf("deleteRequest(): error saving request to storage: %s", err)
-		s.error(w, http.StatusInternalServerError, err)
+		sendError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	// Send success to client
-	s.respond(w, http.StatusOK, nil)
+	respond(w, http.StatusOK, nil)
 }
 
 func (s *Server) handleListAllRequests() http.HandlerFunc {
@@ -134,7 +134,7 @@ func (s *Server) handleListAllRequests() http.HandlerFunc {
 		} else {
 			if err := json.NewDecoder(r.Body).Decode(paginator); err != nil {
 				s.logger.Errorf("handleListAllRequests(): error decoding request body: %s", err)
-				s.error(w, http.StatusBadRequest, err)
+				sendError(w, http.StatusBadRequest, err)
 				return
 			}
 			if paginator.RequestsPerPage == 0 {
@@ -144,19 +144,6 @@ func (s *Server) handleListAllRequests() http.HandlerFunc {
 
 		// Get stored requests
 		requests := s.storage.GetAllRequests(paginator)
-		s.respond(w, http.StatusOK, requests)
-	}
-}
-
-func (s *Server) error(w http.ResponseWriter, code int, err error) {
-	s.respond(w, code, map[string]string{"error": err.Error()})
-}
-
-func (s *Server) respond(w http.ResponseWriter, code int, data interface{}) {
-	w.WriteHeader(code)
-	if data != nil {
-		if err := json.NewEncoder(w).Encode(data); err != nil {
-			s.logger.Errorf("failed encoding JSON: %v", err)
-		}
+		respond(w, http.StatusOK, requests)
 	}
 }
