@@ -44,6 +44,7 @@ func NewConcurrentServer(poolSize int, fetcher fetcher.Fetcher, storage storage.
 	return s
 }
 
+// Wait workers to finish.
 func (s *ConcurrentServer) Wait() {
 	s.wg.Wait()
 }
