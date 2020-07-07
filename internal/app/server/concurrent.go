@@ -22,11 +22,11 @@ type ConcurrentServer struct {
 
 	poolSize int
 	taskCh   chan *model.FetchData
-	Wg       sync.WaitGroup
+	wg       sync.WaitGroup
 }
 
 // NewConcurrentServer constructor.
-func NewConcurrentServer(poolSize int, fetcher fetcher.Fetcher, storage storage.Storage, logger *logrus.Logger) *ConcurrentServer {
+func NewConcurrentServer(poolSize int, fetcher fetcher.Fetcher, storage storage.Storage, logger *logrus.Logger) http.Handler {
 	s := &ConcurrentServer{
 		router:   mux.NewRouter(),
 		fetcher:  fetcher,
@@ -42,6 +42,10 @@ func NewConcurrentServer(poolSize int, fetcher fetcher.Fetcher, storage storage.
 		go s.worker()
 	}
 	return s
+}
+
+func (s *ConcurrentServer) Wait() {
+	s.wg.Wait()
 }
 
 func (s *ConcurrentServer) worker() {
@@ -67,7 +71,7 @@ func (s *ConcurrentServer) worker() {
 		}
 
 		//fmt.Println("worker ended")
-		s.Wg.Done()
+		s.wg.Done()
 	}
 }
 
@@ -106,6 +110,6 @@ func (s *ConcurrentServer) makeRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send data to task channel
-	s.Wg.Add(1)
+	s.wg.Add(1)
 	s.taskCh <- data
 }

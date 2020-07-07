@@ -17,5 +17,5 @@ func TestConcurrentServer_FetchResponse(t *testing.T) {
 		logrus.New())
 
 	populateStorage(s, t)
-	s.Wg.Wait()
+	s.(*server.ConcurrentServer).Wait()
 }
