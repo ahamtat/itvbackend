@@ -46,8 +46,7 @@ func TestDatabaseStorage_AddRequest(t *testing.T) {
 	require.Nil(t, err)
 
 	// Make sure that all expectations were met
-	err = mock.ExpectationsWereMet()
-	require.Nil(t, err)
+	require.Nil(t, mock.ExpectationsWereMet())
 }
 
 func TestStorage_AddResponse(t *testing.T) {
@@ -82,6 +81,5 @@ func TestStorage_AddResponse(t *testing.T) {
 	require.Nil(t, err)
 
 	// Make sure that all expectations were met
-	err = mock.ExpectationsWereMet()
-	require.Nil(t, err)
+	require.Nil(t, mock.ExpectationsWereMet())
 }
