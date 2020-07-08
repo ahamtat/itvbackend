@@ -10,10 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ahamtat/itvbackend/internal/app/storage/database"
+	"github.com/ahamtat/itvbackend/internal/app/storage/memory"
+
 	"github.com/ahamtat/itvbackend/internal/app/fetcher"
 
 	"github.com/ahamtat/itvbackend/internal/app/server"
-	"github.com/ahamtat/itvbackend/internal/app/storage"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,18 +48,18 @@ func main() {
 	case "memory":
 		handler = server.NewServer(
 			fetcher.NewHTTPFetcher(time.Duration(timeout)*time.Second),
-			storage.NewMemoryStorage(),
+			memory.NewMemoryStorage(),
 			logrus.New())
 	case "database":
-		conn := storage.NewDatabaseConnection(dsn, poolSize)
-		if err := conn.Init(); err != nil {
-			logger.Fatalln("connection to database is not valid")
+		db, err := database.CreateDatabase(dsn, poolSize)
+		if err != nil {
+			logger.Fatalf("failed creating database connection: %v\n", err)
 		}
 		handler = server.NewConcurrentServer(
 			poolSize,
 			fetcher.NewHTTPFetcher(time.Duration(timeout)*time.Second),
-			storage.NewDatabaseStorage(ctx, conn),
-			logrus.New())
+			database.NewDatabaseStorage(ctx, db),
+			logger)
 	default:
 		logger.Fatalf("wrong storage mode: %s\n", mode)
 	}

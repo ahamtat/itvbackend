@@ -1,8 +1,10 @@
-package storage_test
+package memory_test
 
 import (
 	"net/http"
 	"testing"
+
+	"github.com/ahamtat/itvbackend/internal/app/storage/memory"
 
 	"github.com/ahamtat/itvbackend/internal/app/storage"
 
@@ -39,7 +41,7 @@ func TestMemoryStorage_AddRequest(t *testing.T) {
 		},
 	}
 
-	s := storage.NewMemoryStorage()
+	s := memory.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	for _, tc := range testCases {
@@ -52,7 +54,7 @@ func TestMemoryStorage_AddRequest(t *testing.T) {
 }
 
 func TestMemoryStorage_AddResponse(t *testing.T) {
-	s := storage.NewMemoryStorage()
+	s := memory.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	// Populate storage with data
@@ -92,7 +94,7 @@ func TestMemoryStorage_AddResponse(t *testing.T) {
 }
 
 func TestMemoryStorage_GetAllRequests(t *testing.T) {
-	s := storage.NewMemoryStorage()
+	s := memory.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	// Populate storage with data
@@ -136,7 +138,7 @@ func TestMemoryStorage_GetAllRequests(t *testing.T) {
 }
 
 func TestMemoryStorage_DeleteRequest(t *testing.T) {
-	s := storage.NewMemoryStorage()
+	s := memory.NewMemoryStorage()
 	require.NotNil(t, s)
 
 	// Populate storage with data

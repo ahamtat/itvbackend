@@ -1,7 +1,9 @@
-package storage
+package memory
 
 import (
 	"sync"
+
+	"github.com/ahamtat/itvbackend/internal/app/storage"
 
 	"github.com/ahamtat/itvbackend/internal/app/model"
 	"github.com/google/uuid"
@@ -14,7 +16,7 @@ type MemoryStorage struct {
 }
 
 // NewMemoryStorage constructor.
-func NewMemoryStorage() Storage {
+func NewMemoryStorage() storage.Storage {
 	return &MemoryStorage{
 		mx:      sync.Mutex{},
 		storage: make(map[string]*model.Request),
@@ -24,7 +26,7 @@ func NewMemoryStorage() Storage {
 // AddFetchData saves fetch data and return ID.
 func (s *MemoryStorage) AddRequest(data *model.FetchData) (string, error) {
 	if data == nil {
-		return "", ErrInvalidInputData
+		return "", storage.ErrInvalidInputData
 	}
 
 	s.mx.Lock()
@@ -43,7 +45,7 @@ func (s *MemoryStorage) AddRequest(data *model.FetchData) (string, error) {
 func (s *MemoryStorage) AddResponse(id string, response *model.Response) error {
 	// Check input data
 	if response == nil {
-		return ErrInvalidInputData
+		return storage.ErrInvalidInputData
 	}
 
 	s.mx.Lock()
@@ -52,7 +54,7 @@ func (s *MemoryStorage) AddResponse(id string, response *model.Response) error {
 	// Save response in memory
 	req, ok := s.storage[id]
 	if !ok {
-		return ErrRequestNotFound
+		return storage.ErrRequestNotFound
 	}
 	req.Response = response
 	return nil
@@ -95,7 +97,7 @@ func (s *MemoryStorage) DeleteRequest(id string) error {
 	// Remove response from memory
 	_, ok := s.storage[id]
 	if !ok {
-		return ErrRequestNotFound
+		return storage.ErrRequestNotFound
 	}
 	delete(s.storage, id)
 	return nil
