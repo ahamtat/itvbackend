@@ -20,7 +20,9 @@ type Server struct {
 }
 
 // NewServer constructor.
-func NewServer(fetcher fetcher.Fetcher, storage storage.Storage, logger *logrus.Logger) http.Handler {
+func NewServer(fetcher fetcher.Fetcher, storage storage.Storage) http.Handler {
+	logger := logrus.New()
+
 	// Check input data
 	if fetcher == nil || storage == nil {
 		logger.Fatalf("NewServer(): invalid input data")

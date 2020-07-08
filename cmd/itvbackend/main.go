@@ -48,8 +48,7 @@ func main() {
 	case "memory":
 		handler = server.NewServer(
 			fetcher.NewHTTPFetcher(time.Duration(timeout)*time.Second),
-			memory.NewMemoryStorage(),
-			logrus.New())
+			memory.NewMemoryStorage())
 	case "database":
 		db, err := database.CreateDatabase(dsn, poolSize)
 		if err != nil {
@@ -58,8 +57,7 @@ func main() {
 		handler = server.NewConcurrentServer(
 			poolSize,
 			fetcher.NewHTTPFetcher(time.Duration(timeout)*time.Second),
-			database.NewDatabaseStorage(ctx, db),
-			logger)
+			database.NewDatabaseStorage(ctx, db))
 	default:
 		logger.Fatalf("wrong storage mode: %s\n", mode)
 	}

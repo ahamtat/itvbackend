@@ -10,8 +10,6 @@ import (
 
 	"github.com/ahamtat/itvbackend/internal/app/storage/memory"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ahamtat/itvbackend/internal/app/server"
@@ -59,8 +57,7 @@ func populateStorage(s http.Handler, t *testing.T) {
 func TestServer_FetchResponse(t *testing.T) {
 	s := server.NewServer(
 		fetcher.NewMockFetcher(),
-		memory.NewMemoryStorage(),
-		logrus.New())
+		memory.NewMemoryStorage())
 
 	populateStorage(s, t)
 }
@@ -92,8 +89,7 @@ func readAndDecodeRequests(s http.Handler, expected int, paginator *model.Pagina
 func TestServer_ListResponse(t *testing.T) {
 	s := server.NewServer(
 		fetcher.NewMockFetcher(),
-		memory.NewMemoryStorage(),
-		logrus.New())
+		memory.NewMemoryStorage())
 
 	// Read All data
 	populateStorage(s, t)
@@ -110,8 +106,7 @@ func TestServer_ListResponse(t *testing.T) {
 func TestServer_DeleteResponse(t *testing.T) {
 	s := server.NewServer(
 		fetcher.NewMockFetcher(),
-		memory.NewMemoryStorage(),
-		logrus.New())
+		memory.NewMemoryStorage())
 
 	populateStorage(s, t)
 	requests := readAndDecodeRequests(s, len(fetchData), nil, t)

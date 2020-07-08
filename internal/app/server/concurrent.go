@@ -26,12 +26,12 @@ type ConcurrentServer struct {
 }
 
 // NewConcurrentServer constructor.
-func NewConcurrentServer(poolSize int, fetcher fetcher.Fetcher, storage storage.Storage, logger *logrus.Logger) http.Handler {
+func NewConcurrentServer(poolSize int, fetcher fetcher.Fetcher, storage storage.Storage) http.Handler {
 	s := &ConcurrentServer{
 		router:   mux.NewRouter(),
 		fetcher:  fetcher,
 		storage:  storage,
-		logger:   logger,
+		logger:   logrus.New(),
 		poolSize: poolSize,
 		taskCh:   make(chan *model.FetchData, poolSize),
 	}
