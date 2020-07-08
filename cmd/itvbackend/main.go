@@ -51,6 +51,8 @@ func main() {
 			memory.NewMemoryStorage())
 	case "database":
 		db, err := database.CreateDatabase(dsn, poolSize)
+		defer func() { _ = db.Close() }()
+
 		if err != nil {
 			logger.Fatalf("failed creating database connection: %v\n", err)
 		}
