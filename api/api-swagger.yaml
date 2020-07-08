@@ -1,0 +1,141 @@
+---
+swagger: "2.0"
+info:
+  description: OpenAPI specification for ITV-backend application
+  version: 1.0.0
+  title: itvbackend application API
+consumes:
+  - application/json
+produces:
+  - application/json
+schemes:
+  - http
+basePath:
+  /v1/requests
+
+paths:
+  /request:
+    post:
+      summary: execute request to an external resource
+      description: Endpoint for user request to an external resource
+      operationId: sendRequest
+      parameters:
+        - name: fetchData
+          in: body
+          schema:
+            $ref: "#/definitions/fetchData"
+      tags:
+        - request
+      responses:
+        default:
+          description: Response from external resource
+          schema:
+            $ref: "#/definitions/response"
+    delete:
+      summary: delete request from application storage
+      description: Endpoint for deleting user request
+      operationId: deleteRequest
+      parameters:
+        - name: id
+          schema:
+            type: string
+            format: uuid
+          in: body
+          required: true
+      tags:
+        - request
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: "#/definitions/response"
+        default:
+          description: error
+          schema:
+            $ref: "#/definitions/error"
+
+  /list:
+    get:
+      summary: get client request list from application storage
+      description: Endpoint for client requests listing
+      operationId: getRequests
+      parameters:
+        - name: paginator
+          in: body
+          schema:
+            $ref: "#/definitions/paginator"
+      tags:
+        - list
+      responses:
+        200:
+          description: Array of client requests
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/response"
+
+definitions:
+  fetchData:
+    type: object
+    required:
+      - method
+      - url
+    properties:
+      method:
+        type: string
+        description: HTTP method
+      url:
+        type: string
+        format: uri
+        description: external resource URL
+      headers:
+        type: array
+        items:
+          type: string
+        description: HTTP headers
+      body:
+        type: string
+        description: message body
+
+  response:
+    type: object
+    required:
+      - id
+      - status
+      - length
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: request identifier
+      status:
+        type: integer
+        description: HTTP code response from external resource
+      headers:
+        type: array
+        items:
+          type: string
+        description: HTTP headers response from external resource
+      length:
+        type: integer
+        format: int64
+        description: response content length
+
+  paginator:
+    type: object
+    properties:
+      page:
+        type: integer
+        description: current page number
+      requestsPerPage:
+        type: integer
+        description: number of requests per page
+
+  error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int64
+      message:
+        type: string
