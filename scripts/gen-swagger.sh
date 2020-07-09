@@ -8,5 +8,6 @@ if [ $retVal -ne 0 ]; then
 else
   echo "Generating GO code"
   mkdir -p ../internal/app/swagger/server
-  swagger generate server -f ../api/api-swagger.yaml -t ../internal/app/swagger/server --exclude-main
+  swagger generate server -A itvbackend -f ../api/api-swagger.yaml -t ../internal/app/swagger/server
+   #--exclude-main
 fi
