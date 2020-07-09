@@ -16,5 +16,5 @@ func TestConcurrentServer_FetchResponse(t *testing.T) {
 		memory.NewMemoryStorage())
 
 	populateStorage(s, t)
-	s.(*server.ConcurrentServer).Wait()
+	s.(*server.ConcurrentServer).Close()
 }

@@ -38,18 +38,18 @@ func NewConcurrentServer(poolSize int, fetcher fetcher.Fetcher, storage storage.
 	s.configureRouter()
 
 	// Create workers
+	s.wg.Add(poolSize)
 	for i := 0; i < poolSize; i++ {
 		go s.worker()
 	}
 	return s
 }
 
-// Wait workers to finish.
-func (s *ConcurrentServer) Wait() {
-	s.wg.Wait()
-}
-
 func (s *ConcurrentServer) worker() {
+	// Mark this goroutine as done! once the function exits
+	defer s.wg.Done()
+
+	// Make tasks blocking reading
 	for data := range s.taskCh {
 		// Save request to storage
 		id, err := s.storage.AddRequest(data)
@@ -71,8 +71,7 @@ func (s *ConcurrentServer) worker() {
 			return
 		}
 
-		//fmt.Println("worker ended")
-		s.wg.Done()
+		s.logger.Infoln("task processed") // Should be Debugln in production ;)
 	}
 }
 
@@ -111,6 +110,11 @@ func (s *ConcurrentServer) makeRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send data to task channel
-	s.wg.Add(1)
 	s.taskCh <- data
+}
+
+// Close task channel to inform worker goroutines.
+func (s *ConcurrentServer) Close() {
+	close(s.taskCh)
+	s.wg.Wait()
 }

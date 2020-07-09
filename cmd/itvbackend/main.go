@@ -25,6 +25,7 @@ var (
 	mode     string
 	timeout  int
 	poolSize int
+	logger   = logrus.New()
 )
 
 func init() {
@@ -37,12 +38,9 @@ func init() {
 }
 
 func main() {
-	logger := logrus.New()
-
 	// Create application main context
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Initialize proper server logic
 	var handler http.Handler
 	switch mode {
 	case "memory":
@@ -92,6 +90,9 @@ func main() {
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	if concurSrv, ok := handler.(*server.ConcurrentServer); ok {
+		concurSrv.Close()
+	}
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Fatalf("Server shutdown failed: %v", err)
 	}
